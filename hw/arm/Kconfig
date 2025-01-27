@@ -43,6 +43,9 @@ config ASHET_VHC
     default y
     depends on TCG && ARM
     select SERIAL_MM
+    select PL022
+    select SIFIVE_TEST
+    select GOLDFISH_RTC
     
 config CUBIEBOARD
     bool

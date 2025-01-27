@@ -5,7 +5,10 @@
 #include "hw/boards.h"
 #include "hw/char/serial-mm.h"
 #include "hw/qdev-clock.h"
+#include "hw/misc/sifive_test.h"
+#include "hw/rtc/goldfish_rtc.h"
 #include "hw/qdev-properties.h"
+#include "hw/ssi/pl022.h"
 #include "qapi/error.h"
 #include "qemu/error-report.h"
 #include "sysemu/sysemu.h"
@@ -96,6 +99,15 @@
 #define HSTX_FIFO_BASE 0x50600000UL
 #define CORESIGHT_TRACE_BASE 0x50700000UL
 
+#define VIRTIO_BASE 0x60000000UL
+#define VIRTIO_SIZE 0x200UL
+#define VIRTIO_COUNT 8U
+
+#define QEMU_BASE 0x70000000UL
+#define QEMU_GOLDFISH_RTC QEMU_BASE + 0x100000UL
+#define QEMU_SIFIVE_TEST QEMU_BASE + 0x200000UL
+
+
 #define SIO_BASE 0xd0000000UL
 #define SIO_NONSEC_BASE 0xd0020000UL
 
@@ -160,13 +172,30 @@ static void ashet_vhc_init(MachineState *machine) {
   // Initialize RAM:
   MemoryRegion *system_memory = get_system_memory();
 
+  // Create memory map:
   memory_region_add_subregion(system_memory, XIP_SLOT0_BASE, &ashetvhc->xip_flash_rom);
   memory_region_add_subregion(system_memory, XIP_SLOT1_BASE, machine->ram);
   memory_region_add_subregion(system_memory, SRAM_BASE, &ashetvhc->builtin_sram);
   memory_region_add_subregion(system_memory, ROM_BASE, &ashetvhc->flash_alias);
 
+  // Create RP2350 devices:
   serial_mm_init(system_memory, UART0_BASE, UARTn_REGSIZE, 0, 399193, serial_hd(0), DEVICE_LITTLE_ENDIAN);
   serial_mm_init(system_memory, UART1_BASE, UARTn_REGSIZE, 0, 399193, serial_hd(1), DEVICE_LITTLE_ENDIAN);
+
+  sysbus_create_simple(TYPE_PL022, SPI0_BASE, NULL);
+  sysbus_create_simple(TYPE_PL022, SPI1_BASE, NULL);
+
+  // Create virtual devices:
+  sysbus_create_simple(TYPE_GOLDFISH_RTC, QEMU_GOLDFISH_RTC, NULL);
+  sysbus_create_simple(TYPE_SIFIVE_TEST, QEMU_SIFIVE_TEST, NULL);
+
+  // Create virtio slots:
+  for(size_t i = 0; i < VIRTIO_COUNT; i++)
+  {
+    hwaddr const base = VIRTIO_BASE + VIRTIO_SIZE * i;
+    sysbus_create_simple("virtio-mmio", base, NULL);
+  }
+
 
   object_initialize_child(OBJECT(machine), "armv7m", &ashetvhc->armv7m, TYPE_ARMV7M);
   DeviceState *armv7m = DEVICE(&ashetvhc->armv7m);
