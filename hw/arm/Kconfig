@@ -38,6 +38,12 @@ config ARM_VIRT
     select ACPI_CXL
     select ACPI_HMAT
 
+config ASHET_VHC
+    bool
+    default y
+    depends on TCG && ARM
+    select SERIAL_MM
+    
 config CUBIEBOARD
     bool
     default y
