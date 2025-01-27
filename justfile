@@ -9,6 +9,7 @@ configure:
         --enable-vnc-jpeg \
         --enable-vnc-sasl \
         --enable-vte \
+        --enable-slirp \
         --prefix="{{justfile_directory()}}/prefix"
 
 build:
