@@ -4,6 +4,7 @@
 #include "hw/arm/boot.h"
 #include "hw/boards.h"
 #include "hw/char/serial-mm.h"
+#include "hw/char/pl011.h"
 #include "hw/qdev-clock.h"
 #include "hw/misc/sifive_test.h"
 #include "hw/rtc/goldfish_rtc.h"
@@ -107,7 +108,6 @@
 #define QEMU_GOLDFISH_RTC QEMU_BASE + 0x100000UL
 #define QEMU_SIFIVE_TEST QEMU_BASE + 0x200000UL
 
-
 #define SIO_BASE 0xd0000000UL
 #define SIO_NONSEC_BASE 0xd0020000UL
 
@@ -179,8 +179,8 @@ static void ashet_vhc_init(MachineState *machine) {
   memory_region_add_subregion(system_memory, ROM_BASE, &ashetvhc->flash_alias);
 
   // Create RP2350 devices:
-  serial_mm_init(system_memory, UART0_BASE, UARTn_REGSIZE, 0, 399193, serial_hd(0), DEVICE_LITTLE_ENDIAN);
-  serial_mm_init(system_memory, UART1_BASE, UARTn_REGSIZE, 0, 399193, serial_hd(1), DEVICE_LITTLE_ENDIAN);
+  pl011_create(UART0_BASE, NULL, serial_hd(0));
+  pl011_create(UART1_BASE, NULL, serial_hd(1));
 
   sysbus_create_simple(TYPE_PL022, SPI0_BASE, NULL);
   sysbus_create_simple(TYPE_PL022, SPI1_BASE, NULL);
@@ -190,12 +190,10 @@ static void ashet_vhc_init(MachineState *machine) {
   sysbus_create_simple(TYPE_SIFIVE_TEST, QEMU_SIFIVE_TEST, NULL);
 
   // Create virtio slots:
-  for(size_t i = 0; i < VIRTIO_COUNT; i++)
-  {
+  for (size_t i = 0; i < VIRTIO_COUNT; i++) {
     hwaddr const base = VIRTIO_BASE + VIRTIO_SIZE * i;
     sysbus_create_simple("virtio-mmio", base, NULL);
   }
-
 
   object_initialize_child(OBJECT(machine), "armv7m", &ashetvhc->armv7m, TYPE_ARMV7M);
   DeviceState *armv7m = DEVICE(&ashetvhc->armv7m);

@@ -20,4 +20,6 @@ GTAGS
 *.swp
 *.patch
 *.gcov
-prefix/
+
+.prefix/
+.build/
