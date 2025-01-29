@@ -12,6 +12,7 @@ configure:
         --enable-vnc-jpeg \
         --enable-vnc-sasl \
         --enable-vte \
+        --disable-libnfs \
         --enable-slirp \
         --prefix="{{justfile_directory()}}/{{installdir}}"
 
